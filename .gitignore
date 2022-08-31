@@ -127,3 +127,11 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+
+# any sqlite file created by the application
+*.sqlite
+*.sqlite3
+
+# any database file created by the application
+*.db

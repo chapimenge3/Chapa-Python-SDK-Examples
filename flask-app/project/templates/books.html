@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- show all books -->
+<div class="column is-4 is-offset-4">
+    <h3 class="title">All Books</h3>
+    <a href="{{ url_for('book.create_book') }}" class="button is-block is-info is-large is-fullwidth">Create New Book</a>
+    <div class="box">
+        <table class="table is-fullwidth">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Author</th>
+                    <th>Year</th>
+                    <th>Price</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for book in books %}
+                <tr>
+                    <td>{{ book.title }}</td>
+                    <td>{{ book.author }}</td>
+                    <td>{{ book.year }}</td>
+                    <td>{{ book.price }}</td>
+
+                    <td>
+                        <a href="{{ url_for('book.show_book', id=book.id) }}">Show</a>
+                        <a href="{{ url_for('book.edit_book', id=book.id) }}">Edit</a>
+                        <a href="{{ url_for('book.delete_book', id=book.id) }}">Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
