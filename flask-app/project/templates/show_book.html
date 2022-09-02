@@ -1,23 +1,33 @@
-{% extends "base.html" %}
-{% block content %}
+{% extends "base.html" %} {% block content %}
 
 <!-- show book -->
 <div class="column is-4 is-offset-4">
-    <h3 class="title">{{ book.title }}</h3>
-    <div class="box">
-        <p>{{ book.author }}</p>
-        <p>{{ book.year }}</p>
-        <p>{{ book.price }}</p>
+  <h3 class="title">{{ book.title }}</h3>
+  <div class="box">
+    <p>{{ book.author }}</p>
+    <p>{{ book.year }}</p>
+    <p>{{ book.price }}</p>
 
-        <!-- Date -->
-        <p>{{ book.created_at | date('Y-m-d H:i:s') }}</p>
-        <!-- buy button -->
-        <a href="{{ url_for('book.buy', book_id=book.id) }}" class="button is-block is-info is-large is-fullwidth">Buy</a>
-        {% if user.id == book.user_id %}
-        <a href="{{ url_for('book.edit_book', book_id=book.id) }}" class="button is-block is-info is-large is-fullwidth">Edit</a>
-        {% endif %}
-    </div>
+    <!-- Date -->
+    <p>{{ book.created_at }}</p>
+    <!-- buy button -->
+    <form action="{{ url_for('books.buy_book', id=book.id) }}" method="post">
+      <button
+        type="submit"
+        class="button is-block is-info is-large is-fullwidth"
+      >
+        Buy
+      </button>
+    </form>
+    <br />
+    {% if current_user.id == book.user_id %}
+    <a
+      href="{{ url_for('books.edit_book', id=book.id) }}"
+      class="button is-block is-info is-large is-fullwidth"
+      >Edit</a
+    >
+    {% endif %}
+  </div>
 </div>
-    
+
 {% endblock %}
-    

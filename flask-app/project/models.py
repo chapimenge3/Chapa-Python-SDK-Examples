@@ -47,7 +47,7 @@ class Transaction(db.Model):
     price = db.Column(db.Float)
     # status enum for transaction
     status = db.Column(db.Enum('pending', 'complete', 'cancelled'))
-    chapa_url = db.Column(db.String(100)) # url to the chapa checkout page
+    chapa_url = db.Column(db.String(100), nullable=True) # url to the chapa checkout page
 
     created_at = db.Column(db.DateTime, server_default=db.func.now())
     updated_at = db.Column(db.DateTime, server_default=db.func.now(), server_onupdate=db.func.now())

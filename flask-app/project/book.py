@@ -1,13 +1,12 @@
 import datetime
 from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import login_required, current_user
+from chapa import Chapa
 from .models import Book, Transaction
-from . import db
+from . import db, chapa
 
-router = Blueprint('auth', __name__)
 
-# CRUD for books
-
+router = Blueprint('books', __name__)
 
 @router.route('/books', methods=['GET', 'POST'])
 @login_required
@@ -27,11 +26,9 @@ def books():
         db.session.add(book)
         db.session.commit()
         flash('Book created successfully', 'success')
+        return redirect(url_for('books.books'))
     else:
-        # paginated query
-        page = request.args.get('page', 1, type=int)
-        books = Book.query.filter_by(
-            user_id=current_user.id).paginate(page, per_page=5)
+        books = Book.query.filter_by()
         return render_template('books.html', books=books)
 
 # create book get route
@@ -64,7 +61,7 @@ def edit_book(id):
         book.price = price
         db.session.commit()
         flash('Book updated successfully', 'success')
-        return redirect(url_for('book.books'))
+        return redirect(url_for('books.books'))
     else:
         return render_template('edit_book.html', book=book)
 
@@ -72,19 +69,16 @@ def edit_book(id):
 @router.route('/books/<int:id>/delete', methods=['GET', 'POST'])
 @login_required
 def delete_book(id):
+    print('YESS')
     book = Book.query.get_or_404(id)
     if book.user_id != current_user.id:
         flash('You cannot delete this book', 'danger')
-        return redirect(url_for('auth.books'))
+        return redirect(url_for('books.book'))
     if request.method == 'POST':
         db.session.delete(book)
         db.session.commit()
         flash('Book deleted successfully', 'success')
-        return redirect(url_for('auth.books'))
-    else:
-        return render_template('delete_book.html', book=book)
-
-# show
+    return redirect(url_for('books.books'))
 
 
 @router.route('/books/<int:id>', methods=['GET'])
@@ -95,35 +89,75 @@ def show_book(id):
 
 
 def create_chapa_checkout(data):
-    pass
+    response = chapa.initialize(**data)
+    print('Response', response.status, response.message)
+    if response.status != 'success':
+        return None
 
+    return response.data
 
 # buy
-@router.route('/books/<int:id>/buy', methods=['GET'])
+@router.route('/books/<int:id>/buy', methods=['POST'])
 @login_required
 def buy_book(id):
     book = Book.query.get_or_404(id)
     if book.user_id == current_user.id:
         flash('You cannot buy your own book', 'danger')
-        return redirect(url_for('auth.books'))
-
-    # create chapa transaction
-    checkout = create_chapa_checkout({})
+        return redirect(url_for('books.books'))
 
     transaction = Transaction(
         user_id=current_user.id, book_id=book.id, price=book.price,
-        date=datetime.datetime.now(), chapa_url=checkout.checkout_url
+        date=datetime.datetime.now(), chapa_url=None
     )
-    
     db.session.add(transaction)
     db.session.commit()
 
+    print('\n\n\Transaction id', transaction.id, (current_user.name + " ").split(maxsplit=1))
+
+    name = (current_user.name + " ").split(maxsplit=1)
+
+    first_name, last_name = 'None', 'None'
+    first_name = name[0]
+    if len(name) != 1:
+        last_name = name[1]
+
+    # create chapa transaction
+    data = {
+        'email': current_user.email,
+        'amount': book.price,
+        'tx_ref': transaction.id,
+        'first_name': first_name or 'None',
+        'last_name': last_name or 'None',
+        'callback_url': f'https://37ad-197-156-86-208.in.ngrok.io{url_for("books.book_buy_success")}',
+        'customization': {
+            'title': 'Amazing Company',
+            'description': 'This is a test project for chapa python sdk'
+        }
+    }
+    checkout = create_chapa_checkout(data)
+    
+    if not checkout:
+        # send report to log file or admin here.
+        flash('Error happened, please try agan')
+        return redirect(url_for('books.show_book', id=id))
+
+    transaction.chapa_url = checkout.checkout_url
+    db.session.add(transaction)
+
     return redirect(checkout.checkout_url)
 
-
 @router.route('/books/webhook', methods=['POST'])
-@login_required
 def book_webhook():
-    # get headers
-    pass
+    print(request.headers)
+    print(request.cookies)
+    print(request.data)
+    print(request.args)
+    print(request.form)
+    print(request.endpoint)
+    print(request.method)
+    print(request.remote_addr)
+
+    return {
+        "sucess": True
+    }
 

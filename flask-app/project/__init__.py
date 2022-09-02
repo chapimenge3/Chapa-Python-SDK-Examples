@@ -1,10 +1,17 @@
+import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from chapa import Chapa
+from dotenv import load_dotenv
 
+load_dotenv('../.env')
 # init SQLAlchemy so we can use it later in our models
 db = SQLAlchemy()
+
+# init Chapa so we can use it later in our models
+CHAPA_API_KEY = os.getenv('CHAPA_API_KEY')
+chapa = Chapa(CHAPA_API_KEY, response_format='obj')
 
 def create_app():
     app = Flask(__name__)
@@ -32,5 +39,9 @@ def create_app():
     # blueprint for non-auth parts of app
     from .main import main as main_blueprint
     app.register_blueprint(main_blueprint)
+
+    # blueprint for books
+    from .book import router
+    app.register_blueprint(router)
 
     return app

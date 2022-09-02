@@ -3,8 +3,15 @@
 <!-- show all books -->
 <div class="column is-4 is-offset-4">
     <h3 class="title">All Books</h3>
-    <a href="{{ url_for('book.create_book') }}" class="button is-block is-info is-large is-fullwidth">Create New Book</a>
+    <a href="{{ url_for('books.create_book') }}" class="button is-block is-info is-large is-fullwidth">Create New Book</a>
     <div class="box">
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="notification is-danger">
+                {{ messages[0] }}
+            </div>
+        {% endif %}
+        {% endwith %}
         <table class="table is-fullwidth">
             <thead>
                 <tr>
@@ -24,9 +31,13 @@
                     <td>{{ book.price }}</td>
 
                     <td>
-                        <a href="{{ url_for('book.show_book', id=book.id) }}">Show</a>
-                        <a href="{{ url_for('book.edit_book', id=book.id) }}">Edit</a>
-                        <a href="{{ url_for('book.delete_book', id=book.id) }}">Delete</a>
+                        <a href="{{ url_for('books.show_book', id=book.id) }}">Show</a>
+                        {% if current_user.id == book.user_id %}
+                        <a href="{{ url_for('books.edit_book', id=book.id) }}">Edit</a>
+                        <form action="{{ url_for('books.delete_book', id=book.id) }}" method="post">
+                            <button type="submit">Delete</button>
+                        </form>
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}

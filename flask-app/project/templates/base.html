@@ -24,6 +24,9 @@
                             <a href="{{ url_for('main.profile') }}" class="navbar-item">
                                 Profile
                             </a>
+                            <a href="{{ url_for('books.books') }}" class="navbar-item">
+                                Books
+                            </a>
                             {% endif %}
                             {% if not current_user.is_authenticated %}
                             <a href="{{ url_for('auth.login') }}" class="navbar-item">
