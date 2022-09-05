@@ -22,6 +22,7 @@ def create_app():
 
     app.config['SECRET_KEY'] = 'secret-key-goes-here'
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
+    app.config['APPLICATION_ROOT'] = '/flask'
 
     db.init_app(app)
 
@@ -38,14 +39,14 @@ def create_app():
 
     # blueprint for auth routes in our app
     from .auth import auth as auth_blueprint
-    app.register_blueprint(auth_blueprint)
+    app.register_blueprint(auth_blueprint, url_prefix='/flask')
 
     # blueprint for non-auth parts of app
     from .main import main as main_blueprint
-    app.register_blueprint(main_blueprint)
+    app.register_blueprint(main_blueprint, url_prefix='/flask')
 
     # blueprint for books
     from .book import router
-    app.register_blueprint(router)
+    app.register_blueprint(router, url_prefix='/flask')
 
     return app

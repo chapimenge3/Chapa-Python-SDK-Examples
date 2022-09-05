@@ -4,5 +4,6 @@ server {
 
     location /flask {
         proxy_pass http://localhost:5000;
+        pro
     }
 }
