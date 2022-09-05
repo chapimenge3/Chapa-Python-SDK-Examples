@@ -1,0 +1,12 @@
+[Unit]
+Description=flask app chapa
+After=network.target
+
+[Service]
+User=sammy
+Group=www-data
+WorkingDirectory=/home/ubuntu/project/Chapa-Python-SDK-Examples/flask-app
+ExecStart=/home/ubuntu/project/Chapa-Python-SDK-Examples/flask-app/run.sh
+
+[Install]
+WantedBy=multi-user.target

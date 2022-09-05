@@ -1,12 +1,14 @@
 import datetime
-from flask import Blueprint, render_template, redirect, url_for, request, flash
+import hashlib
+from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify
 from flask_login import login_required, current_user
 from chapa import Chapa
 from .models import Book, Transaction
-from . import db, chapa
+from . import db, chapa, CHAPA_WEBHOOK_SECRET, APP_URL
 
 
 router = Blueprint('books', __name__)
+
 
 @router.route('/books', methods=['GET', 'POST'])
 @login_required
@@ -30,8 +32,6 @@ def books():
     else:
         books = Book.query.filter_by()
         return render_template('books.html', books=books)
-
-# create book get route
 
 
 @router.route('/create_book', methods=['GET'])
@@ -85,7 +85,13 @@ def delete_book(id):
 @login_required
 def show_book(id):
     book = Book.query.get_or_404(id)
-    return render_template('show_book.html', book=book)
+    transaction = Transaction.query.filter_by(
+        book_id=book.id, user_id=current_user.id, status='complete').first()
+    show = True
+    if transaction:
+        print('Transaction', transaction)
+        show = False
+    return render_template('show_book.html', book=book, show=show)
 
 
 def create_chapa_checkout(data):
@@ -96,7 +102,7 @@ def create_chapa_checkout(data):
 
     return response.data
 
-# buy
+
 @router.route('/books/<int:id>/buy', methods=['POST'])
 @login_required
 def buy_book(id):
@@ -112,7 +118,8 @@ def buy_book(id):
     db.session.add(transaction)
     db.session.commit()
 
-    print('\n\n\Transaction id', transaction.id, (current_user.name + " ").split(maxsplit=1))
+    print('\n\n\Transaction id', transaction.id,
+          (current_user.name + " ").split(maxsplit=1))
 
     name = (current_user.name + " ").split(maxsplit=1)
 
@@ -128,14 +135,14 @@ def buy_book(id):
         'tx_ref': transaction.id,
         'first_name': first_name or 'None',
         'last_name': last_name or 'None',
-        'callback_url': f'https://37ad-197-156-86-208.in.ngrok.io{url_for("books.book_buy_success")}',
+        'callback_url': f'{APP_URL}{url_for("books.book_buy_success")}?tx_ref={transaction.id}',
         'customization': {
             'title': 'Amazing Company',
             'description': 'This is a test project for chapa python sdk'
         }
     }
     checkout = create_chapa_checkout(data)
-    
+
     if not checkout:
         # send report to log file or admin here.
         flash('Error happened, please try agan')
@@ -146,18 +153,49 @@ def buy_book(id):
 
     return redirect(checkout.checkout_url)
 
+
+@router.route('/books/buy/success', methods=['GET'])
+def book_buy_success():
+    tx_ref = request.args.get('tx_ref', None)
+    if not tx_ref:
+        flash('No transaction reference found', 'danger')
+        return redirect(url_for('books.books'))
+
+    transaction = Transaction.query.filter_by(id=tx_ref).first()
+    if not transaction:
+        flash('Transaction not found', 'danger')
+        return redirect(url_for('books.books'))
+    transaction.status = 'complete'
+    db.session.add(transaction)
+    db.session.commit()
+    flash('Transaction successful', 'success')
+    return redirect(url_for('books.books'))
+
+
 @router.route('/books/webhook', methods=['POST'])
 def book_webhook():
-    print(request.headers)
-    print(request.cookies)
-    print(request.data)
-    print(request.args)
-    print(request.form)
-    print(request.endpoint)
-    print(request.method)
-    print(request.remote_addr)
+    try:
+        chapa_signiture = request.headers.get('Chapa-Signature')
+        hash_secret = hashlib.sha256(CHAPA_WEBHOOK_SECRET.encode()).hexdigest()
+        if not chapa_signiture:
+            return jsonify({'status': 'error', 'message': 'No signature found'}), 400
 
-    return {
-        "sucess": True
-    }
+        if chapa_signiture != hash_secret:
+            return jsonify({'status': 'error', 'message': 'Invalid signature'}), 400
 
+        data = request.get_json()
+        tx_ref = data.get('tx_ref')
+        if not tx_ref:
+            return jsonify({'status': 'error', 'message': 'No transaction reference found'}), 400
+
+        transaction = Transaction.query.filter_by(id=tx_ref).first()
+        if not transaction:
+            return jsonify({'status': 'error', 'message': 'Transaction not found'}), 400
+
+        transaction.status = 'complete'
+        db.session.add(transaction)
+        db.session.commit()
+        return jsonify({'status': 'success', 'message': 'Transaction successful'}), 200
+    except Exception as e:
+        print('Error', e)
+        return jsonify({'status': 'error', 'message': 'An error occured'}), 400

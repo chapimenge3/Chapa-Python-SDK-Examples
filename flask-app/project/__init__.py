@@ -9,8 +9,12 @@ load_dotenv('../.env')
 # init SQLAlchemy so we can use it later in our models
 db = SQLAlchemy()
 
-# init Chapa so we can use it later in our models
+# load secrets
 CHAPA_API_KEY = os.getenv('CHAPA_API_KEY')
+CHAPA_WEBHOOK_SECRET = os.getenv('CHAPA_WEBHOOK_SECRET')
+APP_URL = os.getenv('APP_URL')
+
+# init Chapa so we can use it later in our models
 chapa = Chapa(CHAPA_API_KEY, response_format='obj')
 
 def create_app():

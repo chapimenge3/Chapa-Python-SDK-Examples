@@ -11,6 +11,8 @@
     <!-- Date -->
     <p>{{ book.created_at }}</p>
     <!-- buy button -->
+    <!-- if the user already bought dont show buy button -->
+    {% if show %}
     <form action="{{ url_for('books.buy_book', id=book.id) }}" method="post">
       <button
         type="submit"
@@ -19,6 +21,7 @@
         Buy
       </button>
     </form>
+    {% endif %}
     <br />
     {% if current_user.id == book.user_id %}
     <a

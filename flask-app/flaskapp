@@ -1,0 +1,8 @@
+server {
+    listen 80;
+    server_name flask-app.csec-astu.com ;
+
+    location /flask {
+        proxy_pass http://localhost:5000;
+    }
+}
