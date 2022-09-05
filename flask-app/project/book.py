@@ -138,7 +138,7 @@ def buy_book(id):
         'last_name': last_name or 'None',
         'callback_url': f'{APP_URL}{url_for("books.book_buy_success")}?tx_ref={transaction.transaction_id}',
         'customization': {
-            'title': book.title,
+            'title': book.title[:15],
             'description': 'This is a test project for chapa python sdk'
         }
     }
