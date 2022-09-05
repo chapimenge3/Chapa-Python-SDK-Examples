@@ -41,6 +41,7 @@ class Book(db.Model):
 
 class Transaction(db.Model):
     id = db.Column(db.Integer, primary_key=True) # primary keys are required by SQLAlchemy
+    transaction_id = db.Column(db.String(100))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     book_id = db.Column(db.Integer, db.ForeignKey('book.id'))
     date = db.Column(db.DateTime)
@@ -52,12 +53,13 @@ class Transaction(db.Model):
     created_at = db.Column(db.DateTime, server_default=db.func.now())
     updated_at = db.Column(db.DateTime, server_default=db.func.now(), server_onupdate=db.func.now())
 
-    def __init__(self, user_id, book_id, date, price, chapa_url):
+    def __init__(self, user_id, book_id, date, price, chapa_url, transaction_id):
         self.user_id = user_id
         self.book_id = book_id
         self.date = date
         self.price = price
         self.chapa_url = chapa_url
+        self.transaction_id = transaction_id
         self.status = 'pending'
 
     def __repr__(self):

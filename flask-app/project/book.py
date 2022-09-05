@@ -1,5 +1,6 @@
 import datetime
 import hashlib
+from uuid import uuid4
 from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify
 from flask_login import login_required, current_user
 from chapa import Chapa
@@ -110,10 +111,10 @@ def buy_book(id):
     if book.user_id == current_user.id:
         flash('You cannot buy your own book', 'danger')
         return redirect(url_for('books.books'))
-
+    transaction_id = str(uuid4())
     transaction = Transaction(
         user_id=current_user.id, book_id=book.id, price=book.price,
-        date=datetime.datetime.now(), chapa_url=None
+        date=datetime.datetime.now(), chapa_url=None, transaction_id=transaction_id
     )
     db.session.add(transaction)
     db.session.commit()
@@ -132,10 +133,10 @@ def buy_book(id):
     data = {
         'email': current_user.email,
         'amount': book.price,
-        'tx_ref': transaction.id,
+        'tx_ref': transaction.transaction_id,
         'first_name': first_name or 'None',
         'last_name': last_name or 'None',
-        'callback_url': f'{APP_URL}{url_for("books.book_buy_success")}?tx_ref={transaction.id}',
+        'callback_url': f'{APP_URL}{url_for("books.book_buy_success")}?tx_ref={transaction.transaction_id}',
         'customization': {
             'title': book.title,
             'description': 'This is a test project for chapa python sdk'
@@ -161,7 +162,7 @@ def book_buy_success():
         flash('No transaction reference found', 'danger')
         return redirect(url_for('books.books'))
 
-    transaction = Transaction.query.filter_by(id=tx_ref).first()
+    transaction = Transaction.query.filter_by(transaction_id=tx_ref).first()
     if not transaction:
         flash('Transaction not found', 'danger')
         return redirect(url_for('books.books'))
@@ -188,7 +189,7 @@ def book_webhook():
         if not tx_ref:
             return jsonify({'status': 'error', 'message': 'No transaction reference found'}), 400
 
-        transaction = Transaction.query.filter_by(id=tx_ref).first()
+        transaction = Transaction.query.filter_by(transaction_id=tx_ref).first()
         if not transaction:
             return jsonify({'status': 'error', 'message': 'Transaction not found'}), 400
 
